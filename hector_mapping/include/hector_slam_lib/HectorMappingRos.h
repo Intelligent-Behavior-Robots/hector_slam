@@ -116,6 +116,13 @@ public:
 
     std::shared_ptr<hectorslam::DataContainer> laserScanContainer;
 
+    std::string getBaseFrameId() const { return p_base_frame_; }
+
+    std::string getMapFrameId() const { return p_map_frame_; }
+    
+    std::string getOdomFrameId() const { return p_odom_frame_; }
+
+
 protected:
     virtual std::shared_ptr<hectorslam::HectorSlamProcessor> createHectorSlamProcessor(float mapResolution, int mapSizeX, int mapSizeY, const Eigen::Vector2f& startCoords, int multi_res_size, DrawInterface* drawInterfaceIn, HectorDebugInfoInterface* debugInterfaceIn);
     virtual std::shared_ptr<PoseInfoContainer> createPoseInfoContainer();

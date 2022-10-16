@@ -395,6 +395,9 @@ protected:
   MapDimensionProperties mapDimensionProperties;
   int sizeX;
 
+  inline int getLastUpdateIndex() const { return lastUpdateIndex; }
+  inline void setLastUpdateIndex(int value) { lastUpdateIndex = value; }
+
 private:
   int lastUpdateIndex;
 };

@@ -30,7 +30,7 @@
 #define _hectormaprepresentationinterface_h__
 
 #include <Eigen/Core>
-#include "map/GridMap.h"
+#include "../map/GridMap.h"
 
 class ConcreteOccGridMapUtil;
 class MapLockerInterface;

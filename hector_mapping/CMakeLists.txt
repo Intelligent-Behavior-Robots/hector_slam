@@ -42,7 +42,7 @@ generate_messages(
 ###################################
 catkin_package(
   INCLUDE_DIRS include
-#  LIBRARIES hector_mapping
+  LIBRARIES hector_mapping_ros_lib
   CATKIN_DEPENDS roscpp nav_msgs visualization_msgs tf message_filters laser_geometry message_runtime
   DEPENDS EIGEN3
 )
@@ -58,19 +58,24 @@ include_directories(
   ${EIGEN3_INCLUDE_DIRS}
 )
 
-add_executable(hector_mapping
-  src/HectorDebugInfoProvider.h
-  src/HectorDrawings.h
-  src/HectorMappingRos.h
+add_library(hector_mapping_ros_lib
+  include/hector_slam_lib/HectorDebugInfoProvider.h
+  include/hector_slam_lib/HectorDrawings.h
+  include/hector_slam_lib/HectorMappingRos.h
   src/HectorMappingRos.cpp
-  src/main.cpp
   src/PoseInfoContainer.cpp
-  src/PoseInfoContainer.h
+  include/hector_slam_lib/PoseInfoContainer.h
+)
+
+add_executable(hector_mapping
+  src/main.cpp
 )
 
 add_dependencies(hector_mapping hector_mapping_generate_messages_cpp)
 
-target_link_libraries(hector_mapping
+target_link_libraries(
+  hector_mapping
+  hector_mapping_ros_lib
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
 )
@@ -82,7 +87,7 @@ target_link_libraries(hector_mapping
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 
-install(TARGETS hector_mapping
+install(TARGETS hector_mapping hector_mapping_ros_lib
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

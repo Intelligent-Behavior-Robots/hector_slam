@@ -30,6 +30,7 @@
 #define __DataPointContainer_h_
 
 #include <vector>
+#include <Eigen/Eigen>
 
 namespace hectorslam {
 
@@ -41,6 +42,10 @@ public:
   DataPointContainer(int size = 1000)
   {
     dataPoints.reserve(size);
+  }
+
+  virtual ~DataPointContainer()
+  {
   }
 
   void setFrom(const DataPointContainer& other, float factor)
