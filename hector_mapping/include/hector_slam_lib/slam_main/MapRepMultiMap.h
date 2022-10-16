@@ -29,6 +29,8 @@
 #ifndef _hectormaprepmultimap_h__
 #define _hectormaprepmultimap_h__
 
+#include <memory>
+
 #include "MapRepresentationInterface.h"
 #include "MapProcContainer.h"
 
@@ -45,38 +47,74 @@ class MapRepMultiMap : public MapRepresentationInterface
 {
 
 public:
-  MapRepMultiMap(float mapResolution, int mapSizeX, int mapSizeY, unsigned int numDepth, const Eigen::Vector2f& startCoords, DrawInterface* drawInterfaceIn, HectorDebugInfoInterface* debugInterfaceIn)
+  MapRepMultiMap()
   {
-    //unsigned int numDepth = 3;
-    Eigen::Vector2i resolution(mapSizeX, mapSizeY);
 
-    float totalMapSizeX = mapResolution * static_cast<float>(mapSizeX);
-    float mid_offset_x = totalMapSizeX * startCoords.x();
-
-    float totalMapSizeY = mapResolution * static_cast<float>(mapSizeY);
-    float mid_offset_y = totalMapSizeY * startCoords.y();
-
-    for (unsigned int i = 0; i < numDepth; ++i){
-      std::cout << "HectorSM map lvl " << i << ": cellLength: " << mapResolution << " res x:" << resolution.x() << " res y: " << resolution.y() << "\n";
-      GridMap* gridMap = new hectorslam::GridMap(mapResolution,resolution, Eigen::Vector2f(mid_offset_x, mid_offset_y));
-      OccGridMapUtilConfig<GridMap>* gridMapUtil = new OccGridMapUtilConfig<GridMap>(gridMap);
-      ScanMatcher<OccGridMapUtilConfig<GridMap> >* scanMatcher = new hectorslam::ScanMatcher<OccGridMapUtilConfig<GridMap> >(drawInterfaceIn, debugInterfaceIn);
-
-      mapContainer.push_back(MapProcContainer(gridMap, gridMapUtil, scanMatcher));
-
-      resolution /= 2;
-      mapResolution*=2.0f;
-    }
-
-    dataContainers.resize(numDepth-1);
   }
+
+  virtual void initialize(float mapResolution, int mapSizeX, int mapSizeY, unsigned int numDepth, const Eigen::Vector2f& startCoords, DrawInterface* drawInterfaceIn, HectorDebugInfoInterface* debugInterfaceIn)
+  {
+      //unsigned int numDepth = 3;
+      Eigen::Vector2i resolution(mapSizeX, mapSizeY);
+
+      float totalMapSizeX = mapResolution * static_cast<float>(mapSizeX);
+      float mid_offset_x = totalMapSizeX * startCoords.x();
+
+      float totalMapSizeY = mapResolution * static_cast<float>(mapSizeY);
+      float mid_offset_y = totalMapSizeY * startCoords.y();
+
+      for (unsigned int i = 0; i < numDepth; ++i){
+        std::cout << "HectorSM map lvl " << i << ": cellLength: " << mapResolution << " res x:" << resolution.x() << " res y: " << resolution.y() << "\n";
+
+        auto gridMap = this->createGridMap(mapResolution,resolution, mid_offset_x, mid_offset_y);
+        auto gridMapUtil = this->createGridMapUtil(gridMap);
+        auto scanMatcher = this->createScanMatcher(drawInterfaceIn, debugInterfaceIn);
+
+        mapContainer.push_back(this->createMapProcContainer(gridMap, gridMapUtil, scanMatcher));
+
+        resolution /= 2;
+        mapResolution*=2.0f;
+      }
+
+      //dataContainers.resize(numDepth-1);
+      for(int i=0;i< numDepth-1;i++)
+      {
+          dataContainers.push_back(this->createDataContainer());
+      }
+  }
+
+  virtual std::shared_ptr<GridMap> createGridMap(float mapResolution, Eigen::Vector2i resolution, float mid_offset_x, float mid_offset_y)
+  {
+    return std::shared_ptr<hectorslam::GridMap>(new hectorslam::GridMap(mapResolution,resolution, Eigen::Vector2f(mid_offset_x, mid_offset_y)));
+  }
+
+  virtual std::shared_ptr<MapProcContainer> createMapProcContainer(std::shared_ptr<GridMap> gridMap, std::shared_ptr<OccGridMapUtilConfig<GridMap>> gridMapUitl, std::shared_ptr<ScanMatcher<OccGridMapUtilConfig<GridMap> >> scanMatcher)
+  {
+      return std::shared_ptr<MapProcContainer>(new MapProcContainer(gridMap, gridMapUitl,scanMatcher));
+  }
+
+  virtual std::shared_ptr<DataContainer> createDataContainer()
+  {
+        return std::shared_ptr<DataContainer>(new DataContainer());
+  }
+
+  virtual std::shared_ptr<hectorslam::ScanMatcher<OccGridMapUtilConfig<GridMap> >> createScanMatcher(DrawInterface* drawInterfaceIn, HectorDebugInfoInterface* debugInterfaceIn)
+  {
+      return std::shared_ptr<hectorslam::ScanMatcher<OccGridMapUtilConfig<GridMap> >>(new hectorslam::ScanMatcher<OccGridMapUtilConfig<GridMap> >(drawInterfaceIn, debugInterfaceIn));
+  }
+
+  virtual std::shared_ptr<OccGridMapUtilConfig<GridMap>> createGridMapUtil(std::shared_ptr<GridMap> gridMap)
+  {
+      return std::shared_ptr<OccGridMapUtilConfig<GridMap>>(new OccGridMapUtilConfig<GridMap>(gridMap));
+  }
+
 
   virtual ~MapRepMultiMap()
   {
     unsigned int size = mapContainer.size();
 
     for (unsigned int i = 0; i < size; ++i){
-      mapContainer[i].cleanup();
+      mapContainer[i]->cleanup();
     }
   }
 
@@ -85,23 +123,23 @@ public:
     unsigned int size = mapContainer.size();
 
     for (unsigned int i = 0; i < size; ++i){
-      mapContainer[i].reset();
+      mapContainer[i]->reset();
     }
   }
 
-  virtual float getScaleToMap() const { return mapContainer[0].getScaleToMap(); };
+  virtual float getScaleToMap() const { return mapContainer[0]->getScaleToMap(); };
 
   virtual int getMapLevels() const { return mapContainer.size(); };
-  virtual const GridMap& getGridMap(int mapLevel) const { return mapContainer[mapLevel].getGridMap(); };
+  virtual const GridMap& getGridMap(int mapLevel) const{return mapContainer[mapLevel]->getGridMap();}
 
   virtual void addMapMutex(int i, MapLockerInterface* mapMutex)
   {
-    mapContainer[i].addMapMutex(mapMutex);
+    mapContainer[i]->addMapMutex(mapMutex);
   }
 
   MapLockerInterface* getMapMutex(int i)
   {
-    return mapContainer[i].getMapMutex();
+    return mapContainer[i]->getMapMutex();
   }
 
   virtual void onMapUpdated()
@@ -109,7 +147,7 @@ public:
     unsigned int size = mapContainer.size();
 
     for (unsigned int i = 0; i < size; ++i){
-      mapContainer[i].resetCachedData();
+      mapContainer[i]->resetCachedData();
     }
   }
 
@@ -122,10 +160,10 @@ public:
     for (int index = size - 1; index >= 0; --index){
       //std::cout << " m " << i;
       if (index == 0){
-        tmp  = (mapContainer[index].matchData(tmp, dataContainer, covMatrix, 5));
+        tmp  = (mapContainer[index]->matchData(tmp, dataContainer, covMatrix, 5));
       }else{
-        dataContainers[index-1].setFrom(dataContainer, static_cast<float>(1.0 / pow(2.0, static_cast<double>(index))));
-        tmp  = (mapContainer[index].matchData(tmp, dataContainers[index-1], covMatrix, 3));
+        dataContainers[index-1]->setFrom(dataContainer, static_cast<float>(1.0 / pow(2.0, static_cast<double>(index))));
+        tmp  = (mapContainer[index]->matchData(tmp, *(dataContainers[index-1]), covMatrix, 3));
       }
     }
     return tmp;
@@ -138,9 +176,9 @@ public:
     for (unsigned int i = 0; i < size; ++i){
       //std::cout << " u " <<  i;
       if (i==0){
-        mapContainer[i].updateByScan(dataContainer, robotPoseWorld);
+        mapContainer[i]->updateByScan(dataContainer, robotPoseWorld);
       }else{
-        mapContainer[i].updateByScan(dataContainers[i-1], robotPoseWorld);
+        mapContainer[i]->updateByScan(*(dataContainers[i-1]), robotPoseWorld);
       }
     }
     //std::cout << "\n";
@@ -151,7 +189,7 @@ public:
     size_t size = mapContainer.size();
 
     for (unsigned int i = 0; i < size; ++i){
-      GridMap& map = mapContainer[i].getGridMap();
+      GridMap& map = mapContainer[i]->getGridMap();
       map.setUpdateFreeFactor(free_factor);
     }
   }
@@ -161,14 +199,15 @@ public:
     size_t size = mapContainer.size();
 
     for (unsigned int i = 0; i < size; ++i){
-      GridMap& map = mapContainer[i].getGridMap();
+      GridMap& map = mapContainer[i]->getGridMap();
       map.setUpdateOccupiedFactor(occupied_factor);
     }
   }
 
+
 protected:
-  std::vector<MapProcContainer> mapContainer;
-  std::vector<DataContainer> dataContainers;
+  std::vector<std::shared_ptr<MapProcContainer>> mapContainer;
+  std::vector<std::shared_ptr<DataContainer>> dataContainers;
 };
 
 }

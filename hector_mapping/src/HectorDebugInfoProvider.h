@@ -31,11 +31,15 @@
 
 #include "util/HectorDebugInfoInterface.h"
 #include "util/UtilFunctions.h"
-
 #include "ros/ros.h"
-
+#include <Eigen/Eigen>
 #include "hector_mapping/HectorDebugInfo.h"
 
+namespace Eigen
+{
+template <typename _MatrixType>
+class SelfAdjointEigenSolver;
+}
 
 class HectorDebugInfoProvider : public HectorDebugInfoInterface
 {

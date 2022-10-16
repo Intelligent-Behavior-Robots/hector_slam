@@ -29,21 +29,20 @@
 #ifndef _hectormapproccontainer_h__
 #define _hectormapproccontainer_h__
 
+#include <memory>
 #include "../map/GridMap.h"
 #include "../map/OccGridMapUtilConfig.h"
 #include "../matcher/ScanMatcher.h"
 #include "../util/MapLockerInterface.h"
 
-class GridMap;
 class ConcreteOccGridMapUtil;
-class DataContainer;
 
 namespace hectorslam{
 
 class MapProcContainer
 {
 public:
-  MapProcContainer(GridMap* gridMapIn, OccGridMapUtilConfig<GridMap>* gridMapUtilIn, ScanMatcher<OccGridMapUtilConfig<GridMap> >* scanMatcherIn)
+  MapProcContainer(std::shared_ptr<GridMap> gridMapIn, std::shared_ptr<OccGridMapUtilConfig<GridMap>> gridMapUtilIn, std::shared_ptr<ScanMatcher<OccGridMapUtilConfig<GridMap> >> scanMatcherIn)
     : gridMap(gridMapIn)
     , gridMapUtil(gridMapUtilIn)
     , scanMatcher(scanMatcherIn)
@@ -55,9 +54,9 @@ public:
 
   void cleanup()
   {
-    delete gridMap;
-    delete gridMapUtil;
-    delete scanMatcher;
+    gridMap=nullptr;
+    gridMapUtil=nullptr;
+    scanMatcher=nullptr;
 
     if (mapMutex){
       delete mapMutex;
@@ -115,9 +114,9 @@ public:
     }
   }
 
-  GridMap* gridMap;
-  OccGridMapUtilConfig<GridMap>* gridMapUtil;
-  ScanMatcher<OccGridMapUtilConfig<GridMap> >* scanMatcher;
+  std::shared_ptr<GridMap> gridMap;
+  std::shared_ptr<OccGridMapUtilConfig<GridMap>> gridMapUtil;
+  std::shared_ptr<ScanMatcher<OccGridMapUtilConfig<GridMap> >> scanMatcher;
   MapLockerInterface* mapMutex;
 };
 

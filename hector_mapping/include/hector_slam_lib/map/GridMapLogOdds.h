@@ -97,7 +97,7 @@ public:
 public:
 
   float logOddsVal; ///< The log odds representation of occupancy probability.
-  int updateIndex;
+  float updateIndex;
 
 
 };
@@ -194,7 +194,7 @@ public:
     logOddsOccupied = probToLogOdds(factor);
   }
 
-protected:
+public:
 
   float probToLogOdds(float prob)
   {

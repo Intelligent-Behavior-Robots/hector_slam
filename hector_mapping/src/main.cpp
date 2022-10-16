@@ -36,7 +36,7 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "hector_slam");
 
   HectorMappingRos sm;
-
+  sm.initialize();
   ros::spin();
 
   return(0);

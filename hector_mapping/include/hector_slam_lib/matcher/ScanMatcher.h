@@ -30,6 +30,7 @@
 #define _scanmatcher_h__
 
 #include <Eigen/Geometry>
+#include <iostream>
 #include "../scan/DataPointContainer.h"
 #include "../util/UtilFunctions.h"
 
@@ -48,7 +49,7 @@ public:
     , debugInterface(debugInterfaceIn)
   {}
 
-  ~ScanMatcher()
+  virtual ~ScanMatcher()
   {}
 
   Eigen::Vector3f matchData(const Eigen::Vector3f& beginEstimateWorld, ConcreteOccGridMapUtil& gridMapUtil, const DataContainer& dataContainer, Eigen::Matrix3f& covMatrix, int maxIterations)

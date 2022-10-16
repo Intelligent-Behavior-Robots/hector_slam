@@ -30,6 +30,8 @@
 #define __OccGridMapUtil_h_
 
 #include <cmath>
+#include <iostream>
+#include <memory>
 
 #include "../scan/DataPointContainer.h"
 #include "../util/UtilFunctions.h"
@@ -41,12 +43,14 @@ class OccGridMapUtil
 {
 public:
 
-  OccGridMapUtil(const ConcreteOccGridMap* gridMap)
+  OccGridMapUtil(std::shared_ptr<const ConcreteOccGridMap> gridMap)
     : concreteGridMap(gridMap)
     , size(0)
   {
     mapObstacleThreshold = gridMap->getObstacleThreshold();
-    cacheMethod.setMapSize(gridMap->getMapDimensions());
+
+    this->cacheMethod = this->createCacheMethod();
+    cacheMethod->setMapSize(gridMap->getMapDimensions());
   }
 
   ~OccGridMapUtil()
@@ -60,6 +64,11 @@ public:
   inline Eigen::Vector3f getMapCoordsPose(const Eigen::Vector3f& worldPose) const { return concreteGridMap->getMapCoordsPose(worldPose); };
 
   inline Eigen::Vector2f getWorldCoordsPoint(const Eigen::Vector2f& mapPoint) const { return concreteGridMap->getWorldCoords(mapPoint); };
+
+  virtual std::shared_ptr<ConcreteCacheMethod> createCacheMethod()
+  {
+      return std::shared_ptr<ConcreteCacheMethod>(new ConcreteCacheMethod());
+  }
 
   void getCompleteHessianDerivs(const Eigen::Vector3f& pose, const DataContainer& dataPoints, Eigen::Matrix3f& H, Eigen::Vector3f& dTr)
   {
@@ -303,30 +312,30 @@ public:
 
     // get grid values for the 4 grid points surrounding the current coords. Check cached data first, if not contained
     // filter gridPoint with gaussian and store in cache.
-    if (!cacheMethod.containsCachedData(index, intensities[0])) {
+    if (!cacheMethod->containsCachedData(index, intensities[0])) {
       intensities[0] = getUnfilteredGridPoint(index);
-      cacheMethod.cacheData(index, intensities[0]);
+      cacheMethod->cacheData(index, intensities[0]);
     }
 
     ++index;
 
-    if (!cacheMethod.containsCachedData(index, intensities[1])) {
+    if (!cacheMethod->containsCachedData(index, intensities[1])) {
       intensities[1] = getUnfilteredGridPoint(index);
-      cacheMethod.cacheData(index, intensities[1]);
+      cacheMethod->cacheData(index, intensities[1]);
     }
 
     index += sizeX-1;
 
-    if (!cacheMethod.containsCachedData(index, intensities[2])) {
+    if (!cacheMethod->containsCachedData(index, intensities[2])) {
       intensities[2] = getUnfilteredGridPoint(index);
-      cacheMethod.cacheData(index, intensities[2]);
+      cacheMethod->cacheData(index, intensities[2]);
     }
 
     ++index;
 
-    if (!cacheMethod.containsCachedData(index, intensities[3])) {
+    if (!cacheMethod->containsCachedData(index, intensities[3])) {
       intensities[3] = getUnfilteredGridPoint(index);
-      cacheMethod.cacheData(index, intensities[3]);
+      cacheMethod->cacheData(index, intensities[3]);
     }
 
     float dx1 = intensities[0] - intensities[1];
@@ -358,7 +367,7 @@ public:
 
   void resetCachedData()
   {
-    cacheMethod.resetCache();
+    cacheMethod->resetCache();
   }
 
   void resetSamplePoints()
@@ -375,9 +384,9 @@ protected:
 
   Eigen::Vector4f intensities;
 
-  ConcreteCacheMethod cacheMethod;
+  std::shared_ptr<ConcreteCacheMethod> cacheMethod;
 
-  const ConcreteOccGridMap* concreteGridMap;
+  std::shared_ptr<const ConcreteOccGridMap> concreteGridMap;
 
   std::vector<Eigen::Vector3f> samplePoints;
 

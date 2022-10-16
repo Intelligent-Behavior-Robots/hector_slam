@@ -29,9 +29,11 @@
 #ifndef _hectormaprepresentationinterface_h__
 #define _hectormaprepresentationinterface_h__
 
-class GridMap;
+#include <Eigen/Core>
+#include "map/GridMap.h"
+
 class ConcreteOccGridMapUtil;
-class DataContainer;
+class MapLockerInterface;
 
 namespace hectorslam{
 
@@ -46,7 +48,8 @@ public:
   virtual float getScaleToMap() const = 0;
 
   virtual int getMapLevels() const = 0;
-  virtual const GridMap& getGridMap(int mapLevel = 0) const = 0;
+  virtual const GridMap& getGridMap(int mapLevel) const = 0;
+
 
   virtual void addMapMutex(int i, MapLockerInterface* mapMutex) = 0;
   virtual MapLockerInterface* getMapMutex(int i) = 0;

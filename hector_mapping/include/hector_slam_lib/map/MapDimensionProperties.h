@@ -88,7 +88,7 @@ public:
   int getSizeY() const { return mapDimensions[1]; };
   float getCellLength() const { return cellLength; };
 
-protected:
+public:
   Eigen::Vector2f topLeftOffset;
   Eigen::Vector2i mapDimensions;
   Eigen::Vector2f mapLimitsf;

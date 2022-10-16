@@ -42,7 +42,6 @@
 #include "MapRepresentationInterface.h"
 #include "MapRepMultiMap.h"
 
-
 #include <float.h>
 
 namespace hectorslam{
@@ -51,21 +50,29 @@ class HectorSlamProcessor
 {
 public:
 
-  HectorSlamProcessor(float mapResolution, int mapSizeX, int mapSizeY , const Eigen::Vector2f& startCoords, int multi_res_size, DrawInterface* drawInterfaceIn = 0, HectorDebugInfoInterface* debugInterfaceIn = 0)
-    : drawInterface(drawInterfaceIn)
-    , debugInterface(debugInterfaceIn)
+  HectorSlamProcessor()
   {
-    mapRep = new MapRepMultiMap(mapResolution, mapSizeX, mapSizeY, multi_res_size, startCoords, drawInterfaceIn, debugInterfaceIn);
 
-    this->reset();
-
-    this->setMapUpdateMinDistDiff(0.4f *1.0f);
-    this->setMapUpdateMinAngleDiff(0.13f * 1.0f);
   }
 
-  ~HectorSlamProcessor()
+  virtual void initialize(float mapResolution, int mapSizeX, int mapSizeY , const Eigen::Vector2f& startCoords, int multi_res_size, DrawInterface* drawInterfaceIn, HectorDebugInfoInterface* debugInterfaceIn )
   {
-    delete mapRep;
+      drawInterface=drawInterfaceIn;
+      debugInterface=debugInterfaceIn;
+
+      mapRep = this->createMultiRepMap(mapResolution, mapSizeX, mapSizeY, multi_res_size, startCoords, drawInterfaceIn, debugInterfaceIn);
+
+      this->reset();
+
+      this->setMapUpdateMinDistDiff(0.4f *1.0f);
+      this->setMapUpdateMinAngleDiff(0.13f * 1.0f);
+  }
+
+  virtual std::shared_ptr<MapRepMultiMap> createMultiRepMap(float mapResolution, int mapSizeX, int mapSizeY, int multi_res_size, const Eigen::Vector2f& startCoords, DrawInterface* drawInterfaceIn, HectorDebugInfoInterface* debugInterfaceIn)
+  {
+      auto ret= std::shared_ptr<MapRepMultiMap>(new MapRepMultiMap());
+      ret->initialize(mapResolution, mapSizeX, mapSizeY, multi_res_size, startCoords, drawInterfaceIn, debugInterfaceIn);
+      return ret;
   }
 
   void update(const DataContainer& dataContainer, const Eigen::Vector3f& poseHintWorld, bool map_without_matching = false)
@@ -95,7 +102,8 @@ public:
     }
 
     if(drawInterface){
-      const GridMap& gridMapRef (mapRep->getGridMap());
+      const auto& gm=mapRep->getGridMap(0);
+      const OccGridMapBase<LogOddsCell, GridMapLogOddsFunctions>& gridMapRef (gm);
       drawInterface->setColor(1.0, 0.0, 0.0);
       drawInterface->setScale(0.15);
 
@@ -128,7 +136,7 @@ public:
   float getScaleToMap() const { return mapRep->getScaleToMap(); };
 
   int getMapLevels() const { return mapRep->getMapLevels(); };
-  const GridMap& getGridMap(int mapLevel = 0) const { return mapRep->getGridMap(mapLevel); };
+  const OccGridMapBase<LogOddsCell, GridMapLogOddsFunctions>& getGridMap(int mapLevel = 0) const { return mapRep->getGridMap(mapLevel); };
 
   void addMapMutex(int i, MapLockerInterface* mapMutex) { mapRep->addMapMutex(i, mapMutex); };
   MapLockerInterface* getMapMutex(int i) { return mapRep->getMapMutex(i); };
@@ -140,7 +148,7 @@ public:
 
 protected:
 
-  MapRepresentationInterface* mapRep;
+  std::shared_ptr<MapRepresentationInterface> mapRep;
 
   Eigen::Vector3f lastMapUpdatePose;
   Eigen::Vector3f lastScanMatchPose;

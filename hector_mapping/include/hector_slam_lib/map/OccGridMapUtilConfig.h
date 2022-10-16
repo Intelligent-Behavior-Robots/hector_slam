@@ -48,7 +48,7 @@ class OccGridMapUtilConfig
 {
 public:
 
-  OccGridMapUtilConfig(ConcreteOccGridMap* gridMap = 0)
+  OccGridMapUtilConfig(std::shared_ptr<ConcreteOccGridMap> gridMap = nullptr)
     : OccGridMapUtil<ConcreteOccGridMap, GridMapCacheMethod>(gridMap)
   {}
 };
